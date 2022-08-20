@@ -1,0 +1,30 @@
+services:
+  pgdata:
+    image: postgres:14-bullseye
+    restart: on-failure
+    environment:
+      POSTGRES_DB: etl
+      POSTGRES_USER: etl
+      POSTGRES_PASSWORD: etl-secret
+    volumes:
+      - ./data:/var/lib/pgsql/data
+    ports:
+      - 5432:5432
+    expose:
+      - 5432
+    networks:
+      - deetl
+
+  pgadmin:
+    image: dpage/pgadmin4:6
+    restart: on-failure
+    environment:
+      PGADMIN_DEFAULT_EMAIL: sitdhibong@gmail.com
+      PGADMIN_DEFAULT_PASSWORD: secret
+    ports:
+      - 8080:80
+    networks:
+      - deetl
+
+networks:
+  deetl:
