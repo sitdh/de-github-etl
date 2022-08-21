@@ -1,5 +1,5 @@
 from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, Integer
-from sqlalchemy import Column, BigInteger, String, Boolean, TIMESTAMP, text
+from sqlalchemy import Column, BigInteger, String, Boolean, TIMESTAMP, text, Date, Time
 from sqlalchemy.orm import declarative_base, relationship, server_onupdate
 
 Base = declarative_base()
@@ -11,11 +11,14 @@ class Datetime(Base):
     __tablename__ = 'dim_datetime'
 
     id = Column(BigInteger, primary_key=True)
-    # org_id = Column(BigInteger, default=default_int)
-    # login = Column(String, default=default_str)
-    # gravatar_id = Column(String, default=default_str)
-    # url = Column(String, default=default_str)
-    # avatar_id = Column(String, default=default_str)
+    the_date = Column(Date)
+    the_day = Column(Integer)
+    the_month = Column(Integer)
+    the_year = Column(Integer)
+    the_time = Column(Time)
+    the_hour = Column(Integer)
+    the_minute = Column(Integer)
+    the_second = Column(Integer)
 
 class Organize(Base):
     __tablename__ = 'dim_organize'
