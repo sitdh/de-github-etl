@@ -1,6 +1,7 @@
+from email.policy import default
 from sqlalchemy import BigInteger, Boolean, Column, ForeignKey, Integer
 from sqlalchemy import Column, BigInteger, String, Boolean, TIMESTAMP, text, Date, Time
-from sqlalchemy.orm import declarative_base, relationship, server_onupdate
+from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
@@ -94,21 +95,25 @@ class Repository(Base):
     git_refs_url = Column(String, default=default_str)
 
 class Comment(Base):
-    __tablename__ = 'comment'
+    __tablename__ = 'dim_comment'
 
     id = Column(BigInteger, primary_key=True)
     comment_id = Column(BigInteger, nullable=True)
-    url = Column(String, nullable=True)
-    html_url = Column(String, nullable=True)
-    issue_url = Column(String, nullable=True)
-    node_id = Column(String, nullable=True)
-    created_at = Column(TIMESTAMP)
-    updated_at = Column(TIMESTAMP)
-    author_association = Column(String, nullable=True)
-    body = Column(String, nullable=True)
-    performed_via_github_app = Column(String, nullable=True)
+    url = Column(String, default=default_str)
+    html_url = Column(String, default=default_str)
+    issue_url = Column(String, default=default_str)
+    node_id = Column(String, default=default_str)
+    author_association = Column(String, default=default_str)
+    body = Column(String, default=default_str)
+    performed_via_github_app = Column(String, default=default_str)
 
-    reaction = relationship('Reaction', back_populates='comment')
+    created_date_id = Column(BigInteger, ForeignKey('dim_datetime.id'), nullable=True)
+    created_at = relationship('Datetime', back_populates='dim_comment')
+
+    updated_date_id = Column(BigInteger, ForeignKey('dim_datetime.id'), nullable=True)
+    updated_at = relationship('Datetime', back_populates='dim_comment')
+    
+    # reaction = relationship('Reaction', back_populates='comment')
 
 class Reaction(Base):
     __tablename__ = 'dim_reaction'
@@ -130,7 +135,7 @@ class Commit(Base):
     __tablename__ = 'dim_commit'
 
     id = Column(BigInteger, primary_key=True)
-    id = Column(String, default=default_str)
+    commit_id = Column(String, default=default_str)
     message = Column(String, default=default_str)
     distinct = Column(Integer, default=default_int)
     url = Column(String, default=default_str)
@@ -139,13 +144,24 @@ class Event(Base):
     __tablename__ = 'fact_event'
 
     id = Column(String, primary_key=True)
-    event_id = Column(String, nullable=True)
-    type = Column(String, nullable=True)
-    actor_id = Column(String, nullable=True)
-    repo_id = Column(Boolean, default=False)
-    payload_id = Column(String, nullable=False)
-    public = Column(Boolean, default=False)
-    created_at = Column(
-        TIMESTAMP, 
-        server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
-    )
+    event_id = Column(String, default=default_str)
+    type = Column(String, default=default_str)
+    actor_id = Column(BigInteger, ForeignKey('dim_user.id'), nullable=True)
+    repo_id = Column(BigInteger, ForeignKey('dim_repo.id'), nullable=True)
+    org_id = Column(BigInteger, ForeignKey('dim_organize.id'), nullable=True)
+
+    date_id = Column(BigInteger, default=default_int)
+    created_at = Column(String)
+
+    public = Column(Integer, default=default_int)
+
+    repository = relationship('Repository', back_populates='fact_event')
+    user = relationship('User', back_populates='fact_event')
+    organize = relationship('Organize', back_populates='fact_event')
+
+    date_id = relationship('Datetime', back_populates='fact_event')
+
+    # created_at = Column(
+    #     TIMESTAMP, 
+    #     server_default=text("CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP")
+    # )
