@@ -19,3 +19,13 @@ $ brew postgresql-upgrade-database
 ```
 
 Then, run command above again.
+
+3. Init tables 
+```
+$ python eventcapture.py --mode=setup
+```
+
+4. Pre-calculate datetime, It migh take times for a while 
+```
+$ python eventcapture.py --mode=datetime
+```
