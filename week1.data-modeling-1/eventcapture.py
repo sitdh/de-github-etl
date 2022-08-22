@@ -1,13 +1,71 @@
-import requests
-import sys, getopt, logging
+from calendar import month
+from cgi import print_environ
+import sys, getopt, logging, os
 import db
+import datetime as dt
 
 from dotenv import load_dotenv
-
+from sqlalchemy.orm import Session
 from model import Base
+from tqdm.auto import tqdm
 
 
 # response = requests.get('https://api.github.com/events')
+
+def read_event_static(engine):
+    pass
+
+def _prepare_datetime(date, timediff):
+    from model import Datetime
+
+    _date = date + dt.timedelta(seconds=timediff)
+
+    return Datetime(
+        id=int(_date.timestamp()),
+        the_datetime=_date,
+        the_datetime_str=str(_date),
+        the_date=_date.date(),
+        the_day=_date.day,
+        the_month=_date.month,
+        the_year=_date.year,
+        the_time=_date.time(),
+        the_hour=_date.hour,
+        the_minute=_date.minute,
+        the_second=_date.second
+    )
+
+def prepare_datetime(engine):
+    import datetime as dt
+
+    from sqlalchemy.orm import Session
+
+    batch_size = 10_000
+
+    current_datetime = dt.datetime.now()
+    after_datetime = current_datetime + dt.timedelta(
+        days=int(os.getenv('DAYS_AFTER', '10'))
+    )
+    before_datetime = current_datetime + dt.timedelta(
+        days=int(os.getenv('DAYS_BEFORE', '10')) * (-1)
+    )
+
+    print(after_datetime, before_datetime)
+    seconds = int((after_datetime - before_datetime).total_seconds())
+    pbar = tqdm(total=seconds)
+
+    with Session(engine) as s:
+        for i in range(0, seconds, batch_size):
+            dates = []
+            for j in range(i, min(i+batch_size, seconds)):
+                dates.append(
+                    _prepare_datetime(current_datetime, j)
+                )
+                pbar.update(1)
+
+            s.bulk_save_objects(dates)
+            del dates
+
+            s.commit()
 
 def define_tables(engine):
     from model import Base as bs
@@ -16,10 +74,10 @@ def define_tables(engine):
     bs.metadata.drop_all(engine)
 
     logging.info('Create tables')
-    print('Create tables')
+    print('Remove exists tables')
     bs.metadata.create_all(engine)
     logging.info('All table created')
-    print('All table created')
+    print('Create tables')
 
 def main(argv):
     try:
@@ -36,24 +94,26 @@ def main(argv):
 
     mode = 'all' if None == mode else mode.lower()
 
-    if mode not in ('etl', 'datetime', 'setup', 'all'):
-        print(__file__, '-m|--mode=[setup,datetime,etl,all]')
+    if mode not in ('etl', 'datetime', 'setup', 'init'):
+        print(__file__, '-m|--mode=[setup,datetime,etl,init]')
         sys.exit(-2)
 
-    with db.engine.connect() as conn:
-        match mode:
-            case 'datetime':
-                # define_tables(db.engine)
-                pass
+    match mode:
+        case 'datetime':
+            prepare_datetime(db.engine)
 
-            case 'setup':
-                define_tables(db.engine)
+        case 'setup':
+            define_tables(db.engine)
 
-            case 'all':
-                define_tables(db.engine)
+        case 'api':
+            read_event_static(db.engine)
 
-            case _:
-                pass
+        case 'init':
+            define_tables(db.engine)
+            prepare_datetime(db.engine)
+
+        case _:
+            pass
 
 if __name__ == '__main__':
     load_dotenv()

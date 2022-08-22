@@ -34,7 +34,7 @@
     $ pip install -r requirements.txt
     ```
 
-1. Working with script
+## ETL Script
     ```
     $ python eventcapture.py --mode=setup
     ```
