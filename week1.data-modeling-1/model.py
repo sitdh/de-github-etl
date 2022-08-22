@@ -11,15 +11,19 @@ default_str = 'zzzz'
 class Datetime(Base):
     __tablename__ = 'datetime'
 
-    id = Column(BigInteger, primary_key=True)
-    the_date = Column(Date)
-    the_day = Column(Integer)
-    the_month = Column(Integer)
-    the_year = Column(Integer)
-    the_time = Column(Time)
-    the_hour = Column(Integer)
-    the_minute = Column(Integer)
-    the_second = Column(Integer)
+    id = Column(BigInteger, primary_key=True, autoincrement=False)
+    the_datetime = Column(TIMESTAMP, nullable=True)
+    the_datetime_str = Column(String, nullable=True)
+    the_date = Column(Date, nullable=True)
+    the_day = Column(Integer, default=default_int)
+    the_month = Column(Integer, default=default_int)
+    the_year = Column(Integer, default=default_int)
+    the_time = Column(Time, nullable=True)
+    the_hour = Column(Integer, default=default_int)
+    the_minute = Column(Integer, default=default_int)
+    the_second = Column(Integer, default=default_int)
+
+    events = relationship('Event')
 
 class Organize(Base):
     __tablename__ = 'organize'
@@ -30,6 +34,8 @@ class Organize(Base):
     gravatar_id = Column(String, default=default_str)
     url = Column(String, default=default_str)
     avatar_id = Column(String, default=default_str)
+
+    events = relationship('Event')
 
 class User(Base):
     __tablename__ = 'user'
@@ -55,6 +61,8 @@ class User(Base):
     user_type = Column(String, default=default_str)
     site_admin = Column(String, default=default_str)
 
+    events = relationship('Event')
+
 class Repository(Base):
     __tablename__ = 'repo'
 
@@ -62,6 +70,8 @@ class Repository(Base):
     repo_id = Column(BigInteger, default=default_str)
     node_id = Column(String, default=default_str)
     name = Column(String, default=default_str)
+
+    events = relationship('Event')
 
 class Event(Base):
     __tablename__ = 'event'
@@ -74,15 +84,12 @@ class Event(Base):
     org_id = Column(BigInteger, ForeignKey('organize.id'), nullable=True)
 
     payload = Column(Text, default=default_str)
-
-    date_id = Column(BigInteger, default=default_int)
-    created_at = Column(String)
-
-    public = Column(Integer, default=default_int)
-
-    repository = relationship('Repository', back_populates='event')
-    user = relationship('User', back_populates='event')
-    organize = relationship('Organize', back_populates='event')
-
-    date_id = relationship('Datetime', back_populates='event')
     created_at = Column(String, nullable=True)
+    public = Column(Integer, default=default_int)
+    date_id = Column(BigInteger, ForeignKey('datetime.id'))
+
+    repository = relationship('Repository', back_populates='events')
+    user = relationship('User', back_populates='events')
+    organize = relationship('Organize', back_populates='events')
+
+    datetime_data = relationship('Datetime', back_populates='events')
