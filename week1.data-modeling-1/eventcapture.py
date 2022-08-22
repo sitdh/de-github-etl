@@ -4,36 +4,22 @@ import db
 
 from dotenv import load_dotenv
 
+from model import Base
+
 
 # response = requests.get('https://api.github.com/events')
-# config = {
-#     'user': os.getenv('DB_USER'),
-#     'pass': os.getenv('DB_PASS'),
-#     'host': os.getenv('DB_HOST'),
-#     'db_name': os.getenv('DB_NAME'),
-# }
-# 
-# engine = create_engine(
-#     'postgresql://{user}:{pass}@{host}/{db_name}'.format(**config)
-# )
-# 
-# with engine.connect() as conn:
-#     print(conn)
 
 def define_tables(engine):
     from model import Base as bs
 
     logging.info('Prepare for tables definition')
-    for tbl in reversed(bs.metadata.sorted_tables):
-        logging.info('Delete table: ' + str(tbl))
-        print('Delete table:', str(tbl))
-        engine.execute(
-            "DROP TABLE IF EXISTS {}".format(
-                str(tbl)
-            )
-        )
+    bs.metadata.drop_all(engine)
 
+    logging.info('Create tables')
+    print('Create tables')
     bs.metadata.create_all(engine)
+    logging.info('All table created')
+    print('All table created')
 
 def main(argv):
     try:
@@ -48,21 +34,26 @@ def main(argv):
         if opt in ('-m', '--mode'):
             mode = arg.lower()
 
-    if mode not in ('etl', 'datetime', 'setup'):
-        print('githubevent.py -m|--mode=[etl,datetime,etl')
+    mode = 'all' if None == mode else mode.lower()
+
+    if mode not in ('etl', 'datetime', 'setup', 'all'):
+        print(__file__, '-m|--mode=[setup,datetime,etl,all]')
         sys.exit(-2)
 
     with db.engine.connect() as conn:
         match mode:
             case 'datetime':
-                define_tables(db.engine)
+                # define_tables(db.engine)
+                pass
 
             case 'setup':
-                pass
+                define_tables(db.engine)
+
+            case 'all':
+                define_tables(db.engine)
 
             case _:
                 pass
-
 
 if __name__ == '__main__':
     load_dotenv()
