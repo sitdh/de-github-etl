@@ -1,8 +1,5 @@
-# Github Event ETL
+# SWU: DS525 Project repository
 
-## Project Preparation
+## Week
 
-Database (Postgres + PGAdmin)
-```
-$ docker compose up
-```
+  - Week 1: [Data Modeling I](./week1.data-modeling-1/README.md)
