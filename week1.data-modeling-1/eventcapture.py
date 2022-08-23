@@ -11,7 +11,14 @@ from event import EventAdapter, EventFulfillment, EventParser
 from model import Event
 from tqdm.auto import tqdm
 
+logging.basicConfig(level=logging.DEBUG)
+
 def read_event_static(engine):
+    """
+    Reading github event from json files and github api
+    by EventAdapter with JSON reader and API reader => withDefaultReader().
+    Then fill missing value with EventFulFillment
+    """
     adapter = EventAdapter.withDefaultReader()
     parser = EventParser()
     fulfillment = EventFulfillment(engine)
@@ -35,10 +42,16 @@ def read_event_static(engine):
         s.commit()
 
 def _prepare_datetime(date, timediff):
+    """
+    Pre-calculated datetime with timediff
+    """
     from model import Datetime
 
     _date = date + dt.timedelta(seconds=timediff)
 
+    """
+    Extract date parts to store in DB
+    """
     return Datetime(
         id=int(_date.timestamp()),
         the_datetime=_date,
@@ -54,6 +67,9 @@ def _prepare_datetime(date, timediff):
     )
 
 def prepare_datetime(engine):
+    """
+    Pre-calculated date and time 
+    """
     import datetime as dt
 
     from sqlalchemy.orm import Session
@@ -87,6 +103,9 @@ def prepare_datetime(engine):
             s.commit()
 
 def define_tables(engine):
+    """
+    Drop all existing tables (If it exists), then define it.
+    """
     from model import Base as bs
 
     logging.info('Prepare for tables definition')
@@ -94,11 +113,22 @@ def define_tables(engine):
 
     logging.info('Create tables')
     print('Remove exists tables')
+
     bs.metadata.create_all(engine)
+
     logging.info('All table created')
     print('Create tables')
 
 def main(argv):
+    """
+    Main function to execute command with user's actions
+
+    - setup: Define tables in schema. In case of table already exists, script will drop tables from schema.
+    - datetime: Pre-calculated date and time but optional
+    - etl: Load git events from json file (example file) and github's api into database
+    - all: Do all steps above
+
+    """
     try:
         opts, args = getopt.getopt(
             argv, "m:", ['mode=']
