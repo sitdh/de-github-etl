@@ -113,8 +113,8 @@ def main(argv):
 
     mode = 'all' if None == mode else mode.lower()
 
-    if mode not in ('etl', 'datetime', 'setup', 'init', 'etl'):
-        print(__file__, '-m|--mode=[setup,datetime,etl,init,etl]')
+    if mode not in ('etl', 'datetime', 'all', 'setup',):
+        print(__file__, '-m|--mode=[setup,datetime,etl,all]')
         sys.exit(-2)
 
     match mode:
@@ -127,12 +127,15 @@ def main(argv):
         case 'etl':
             read_event_static(db.engine)
 
-        case 'init':
+        case 'all':
+            print('Redefine tables')
             define_tables(db.engine)
+
+            print('Prepare datetime')
             prepare_datetime(db.engine)
 
-        case _:
-            pass
+            print('Reading and load to DB')
+            read_event_static(db.engine)
 
 if __name__ == '__main__':
     load_dotenv()
