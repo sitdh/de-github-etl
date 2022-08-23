@@ -11,6 +11,7 @@ from event import EventAdapter, EventFulfillment, EventParser
 from model import Event
 from tqdm.auto import tqdm
 
+load_dotenv()
 logging.basicConfig(level=logging.DEBUG)
 
 def read_event_static(engine):
@@ -168,5 +169,4 @@ def main(argv):
             read_event_static(db.engine)
 
 if __name__ == '__main__':
-    load_dotenv()
     main(sys.argv[1:])

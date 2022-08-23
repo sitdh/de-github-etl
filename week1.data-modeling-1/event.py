@@ -8,10 +8,17 @@ from re import I
 from model import Datetime, Event, Organize, Repository, User
 
 class EventReader(object):
+    """
+    Define Inteface class (like)
+    """
     def read(self) -> list:
         raise NotImplementedError('Not Implement yet')
 
 class EventStaticFileReader(EventReader):
+    """
+    Define a github event reader from static files (local json file).
+    Then return list of dictionary
+    """
     def __init__(self, path: str):
         self._path = path
 
@@ -30,6 +37,10 @@ class EventStaticFileReader(EventReader):
         return dataset
 
 class EventAPIReader(EventReader):
+    """
+    Define a github event reader from github events API.
+    Then return list of dictionary
+    """
     def __init__(self):
         self._event_api = 'https://api.github.com/events'
 
@@ -41,6 +52,9 @@ class EventAPIReader(EventReader):
         return response.json()
 
 class EventAdapter:
+    """
+    Mesh up adapter to work together
+    """
     
     def __init__(self):
         self._adapters = []
@@ -91,6 +105,9 @@ class EventParser:
         return k
 
 class EventFulfillment:
+    """
+    Fill all missing id into event entity
+    """
     def __init__(self, engine):
         self._engine = engine
         self._local_cache = {
@@ -243,6 +260,9 @@ class EventFulfillment:
  
             
 if __name__ == '__main__':
+    """
+    Test section
+    """
     adapter = EventAdapter()
 
     adapter.addAdapters([
