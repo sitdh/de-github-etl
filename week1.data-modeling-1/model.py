@@ -33,7 +33,7 @@ class Organize(Base):
     login = Column(String, default=default_str)
     gravatar_id = Column(String, default=default_str)
     url = Column(String, default=default_str)
-    avatar_id = Column(String, default=default_str)
+    avatar_url = Column(String, default=default_str)
 
     events = relationship('Event')
 

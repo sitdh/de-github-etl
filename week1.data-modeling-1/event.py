@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from re import I
 
-from model import Event, Repository, User
+from model import Event, Organize, Repository, User
 
 class EventReader(object):
     def read(self) -> list:
@@ -158,28 +158,30 @@ class EventFulfillment:
         oid = info.get('id')
 
         if oid in self._local_cache['org']:
-            o = self._local_cache['org'][oid]
+            r = self._local_cache['org'][oid]
         else:
-            stm = select(Repository).where(Repository.repo_id == rid)
+            stm = select(Organize).where(Organize.org_id == oid)
             with Session(self._engine) as s:
-                rp = s.execute(stm).fetchone()
-                if None == rp:
-                    repo = Repository(
-                        repo_id=info.get('id'),
-                        name=info.get('login'),
+                og = s.execute(stm).fetchone()
+                if None == og:
+                    org = Organize(
+                        org_id=info.get('id'),
+                        login=info.get('login'),
+                        gravatar_id=info.get('gravatar_id'),
                         url=info.get('url'),
+                        avatar_url=info.get('avatar_url'),
                     )
 
-                    s.add(repo)
+                    s.add(org)
                     s.commit()
 
-                    r = repo.id
+                    r = org.id
                 else:
-                    r = rp[0].id
+                    r = og[0].id
 
-                self._local_cache['repo'][rid] = r
+                self._local_cache['org'][oid] = r
 
-        return o
+        return r
 
     def __date(self, info):
         pass
@@ -194,7 +196,7 @@ class EventFulfillment:
         # event['repo_id'] = self.__repo(message.get('repo'))
 
         # org id
-        event['org_id'] = self.__repo(message.get('org'))
+        event['org_id'] = self.__org(message.get('org'))
 
         # date id
         # event['date_id'] = self.__repo(message.get('created_at'))
