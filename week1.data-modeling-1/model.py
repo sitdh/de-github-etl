@@ -55,8 +55,8 @@ class Repository(Base):
 
     id = Column(BigInteger, primary_key=True)
     repo_id = Column(BigInteger, default=default_str)
-    node_id = Column(String, default=default_str)
     name = Column(String, default=default_str)
+    url = Column(String, default=default_str)
 
     events = relationship('Event')
 

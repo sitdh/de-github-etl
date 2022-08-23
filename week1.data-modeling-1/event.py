@@ -3,7 +3,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 from re import I
 
-from model import Event, User
+from model import Event, Repository, User
 
 class EventReader(object):
     def read(self) -> list:
@@ -95,9 +95,7 @@ class EventFulfillment:
     def __actor(self, info):
         uid = info.get('id')
 
-        print(info)
-
-        if uid in self._local_cache['actor']:
+        if uid in self._local_cache['actor'].keys():
             u = self._local_cache['actor'][uid]
             print('exits')
         else:
@@ -121,10 +119,8 @@ class EventFulfillment:
                     s.commit()
 
                     u = user.id
-                    print('xxxxx')
                 else:
                     u = m[0].id
-                    print('cache')
 
                 self._local_cache['actor'][uid] = u
 
@@ -132,10 +128,58 @@ class EventFulfillment:
                 
 
     def __repo(self, info):
-        pass
+        rid = info.get('id')
+
+        if rid in self._local_cache['repo']:
+            r = self._local_cache['repo'][rid]
+        else:
+            stm = select(Repository).where(Repository.repo_id == rid)
+            with Session(self._engine) as s:
+                rp = s.execute(stm).fetchone()
+                if None == rp:
+                    repo = Repository(
+                        repo_id=info.get('id'),
+                        name=info.get('login'),
+                        url=info.get('url'),
+                    )
+
+                    s.add(repo)
+                    s.commit()
+
+                    r = repo.id
+                else:
+                    r = rp[0].id
+
+                self._local_cache['repo'][rid] = r
+
+        return r
 
     def __org(self, info):
-        pass
+        oid = info.get('id')
+
+        if oid in self._local_cache['org']:
+            o = self._local_cache['org'][oid]
+        else:
+            stm = select(Repository).where(Repository.repo_id == rid)
+            with Session(self._engine) as s:
+                rp = s.execute(stm).fetchone()
+                if None == rp:
+                    repo = Repository(
+                        repo_id=info.get('id'),
+                        name=info.get('login'),
+                        url=info.get('url'),
+                    )
+
+                    s.add(repo)
+                    s.commit()
+
+                    r = repo.id
+                else:
+                    r = rp[0].id
+
+                self._local_cache['repo'][rid] = r
+
+        return o
 
     def __date(self, info):
         pass
@@ -144,16 +188,16 @@ class EventFulfillment:
         event, message = event_data
 
         # actor id
-        event['actor_id'] = self.__actor(message.get('actor'))
+        # event['actor_id'] = self.__actor(message.get('actor'))
 
         # repo id
-        event['repo_id'] = self.__repo(message.get('repo'))
+        # event['repo_id'] = self.__repo(message.get('repo'))
 
         # org id
         event['org_id'] = self.__repo(message.get('org'))
 
         # date id
-        event['date_id'] = self.__repo(message.get('created_at'))
+        # event['date_id'] = self.__repo(message.get('created_at'))
 
         return Event(**event)
  
@@ -174,5 +218,3 @@ if __name__ == '__main__':
             parser.parse(e), 
             e
         ))
-
-    print(events)
