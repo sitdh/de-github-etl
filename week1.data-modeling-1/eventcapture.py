@@ -6,6 +6,7 @@ import datetime as dt
 
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
+from event import EventAdapter, EventFulfillment, EventParser
 from model import Base
 from tqdm.auto import tqdm
 
@@ -13,7 +14,25 @@ from tqdm.auto import tqdm
 # response = requests.get('https://api.github.com/events')
 
 def read_event_static(engine):
-    pass
+    adapter = EventAdapter.withDefaultReader()
+    parser = EventParser()
+    fulfillment = EventFulfillment(engine)
+
+    events = []
+    for e in adapter.read():
+        events.append((
+            parser.parse(e),
+            e
+        ))
+
+        break
+
+
+    for event in events:
+        e = fulfillment.fill(event)
+        print(e)
+        break
+
 
 def _prepare_datetime(date, timediff):
     from model import Datetime
@@ -94,8 +113,8 @@ def main(argv):
 
     mode = 'all' if None == mode else mode.lower()
 
-    if mode not in ('etl', 'datetime', 'setup', 'init'):
-        print(__file__, '-m|--mode=[setup,datetime,etl,init]')
+    if mode not in ('etl', 'datetime', 'setup', 'init', 'etl'):
+        print(__file__, '-m|--mode=[setup,datetime,etl,init,etl]')
         sys.exit(-2)
 
     match mode:
@@ -105,7 +124,7 @@ def main(argv):
         case 'setup':
             define_tables(db.engine)
 
-        case 'api':
+        case 'etl':
             read_event_static(db.engine)
 
         case 'init':

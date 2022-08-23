@@ -1,7 +1,9 @@
 import os, requests, json
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 from re import I
 
-from model import Event
+from model import Event, User
 
 class EventReader(object):
     def read(self) -> list:
@@ -47,6 +49,16 @@ class EventAdapter:
     def clearAdapter(self):
         self._adapters = []
 
+    @classmethod
+    def withDefaultReader(cls):
+        adapter = EventAdapter()
+        adapter.addAdapters([
+            EventStaticFileReader('./dataset'),
+            EventAPIReader()
+        ])
+
+        return adapter
+
     def read(self) -> list:
         dataset = []
 
@@ -56,30 +68,94 @@ class EventAdapter:
         return dataset
 
 class EventParser:
-    def __init__(self):
-        pass
 
-    def parse(self, message):
+    def parse(self, message) -> dict:
         public_status = 1 if message.get('public') else 0
-        date_id = 0
-
-        # prepare for actor
-        actor_id = 0 # save and get actor id
-        org_id = 0 # save and get org id
-        repo_id = 0 # save and get repo id
-        date_id = 0 # save and get date id
 
         return {
             'event_id': message.get('event_id'),
             'event_type': message.get('type'),
-            'actor_id': actor_id, # message.get('actor', {'id': None}).get('id'),
-            'repo_id': repo_id, # message.get('repo', {'id': None}).get('id'),
-            'org_id': org_id, # message.get('org', {'id', None}).get('id'),
+            'actor_id': message.get('actor', {'id': None}).get('id'),
+            'repo_id': message.get('repo', {'id': None}).get('id'),
+            'org_id': message.get('org', {'id', None}).get('id'),
             'payload': str(message.get('payload')),
             'created_at': str(message.get('created_at')),
             'public': public_status,
-            'date_id': date_id,
         }
+
+class EventFulfillment:
+    def __init__(self, engine):
+        self._engine = engine
+        self._local_cache = {
+            'repo': {},
+            'actor': {},
+            'org': {},
+        }
+
+    def __actor(self, info):
+        uid = info.get('id')
+
+        print(info)
+
+        if uid in self._local_cache['actor']:
+            u = self._local_cache['actor'][uid]
+            print('exits')
+        else:
+            with Session(self._engine) as s:
+                stm = select(User).where(
+                    User.user_id == info.get('id')
+                )
+
+                m = s.execute(stm).fetchone()
+                if None == m:
+                    user = User(
+                        user_id=info.get('id'),
+                        login=info.get('login'),
+                        display_login=info.get('display_login'),
+                        gravatar_id=info.get('gravatar_id'),
+                        url=info.get('url'),
+                        avatar_id=info.get('avatar_id'),
+                    )
+
+                    s.add(user)
+                    s.commit()
+
+                    u = user.id
+                    print('xxxxx')
+                else:
+                    u = m[0].id
+                    print('cache')
+
+                self._local_cache['actor'][uid] = u
+
+        return u
+                
+
+    def __repo(self, info):
+        pass
+
+    def __org(self, info):
+        pass
+
+    def __date(self, info):
+        pass
+
+    def fill(self, event_data) -> Event:
+        event, message = event_data
+
+        # actor id
+        event['actor_id'] = self.__actor(message.get('actor'))
+
+        # repo id
+        event['repo_id'] = self.__repo(message.get('repo'))
+
+        # org id
+        event['org_id'] = self.__repo(message.get('org'))
+
+        # date id
+        event['date_id'] = self.__repo(message.get('created_at'))
+
+        return Event(**event)
  
             
 if __name__ == '__main__':
@@ -92,6 +168,11 @@ if __name__ == '__main__':
 
     parser = EventParser()
 
-    for event in adapter.read():
-        print(parser.parse(event))
-        break
+    events = []
+    for e in adapter.read():
+        events.append((
+            parser.parse(e), 
+            e
+        ))
+
+    print(events)
