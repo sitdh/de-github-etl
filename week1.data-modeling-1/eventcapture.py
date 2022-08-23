@@ -6,12 +6,10 @@ import datetime as dt
 
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
+from sqlalchemy import select
 from event import EventAdapter, EventFulfillment, EventParser
-from model import Base
+from model import Event
 from tqdm.auto import tqdm
-
-
-# response = requests.get('https://api.github.com/events')
 
 def read_event_static(engine):
     adapter = EventAdapter.withDefaultReader()
@@ -19,20 +17,22 @@ def read_event_static(engine):
     fulfillment = EventFulfillment(engine)
 
     events = []
-    for e in adapter.read():
+    for e in tqdm(adapter.read(), desc='Loading data from datasouce'):
         events.append((
             parser.parse(e),
             e
         ))
 
-        break
+    with Session(engine) as s:
+        for event, e in tqdm(events, desc='Ingest data into db'):
+            stm = select(Event).where(Event.event_id==event.get('event_id'))
+            result = s.execute(stm).fetchone()
+            if None == result:
+                s.add(
+                    fulfillment.fill((event, e))
+                )
 
-
-    for event in events:
-        e = fulfillment.fill(event)
-        print(e)
-        break
-
+        s.commit()
 
 def _prepare_datetime(date, timediff):
     from model import Datetime

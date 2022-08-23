@@ -33,7 +33,7 @@ class Organize(Base):
     login = Column(String, default=default_str)
     gravatar_id = Column(String, default=default_str)
     url = Column(String, default=default_str)
-    avatar_id = Column(String, default=default_str)
+    avatar_url = Column(String, default=default_str)
 
     events = relationship('Event')
 
@@ -55,15 +55,15 @@ class Repository(Base):
 
     id = Column(BigInteger, primary_key=True)
     repo_id = Column(BigInteger, default=default_str)
-    node_id = Column(String, default=default_str)
     name = Column(String, default=default_str)
+    url = Column(String, default=default_str)
 
     events = relationship('Event')
 
 class Event(Base):
     __tablename__ = 'event'
 
-    id = Column(String, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     event_id = Column(String, default=default_str)
     event_type = Column(String, default=default_str)
     actor_id = Column(BigInteger, ForeignKey('user.id'), nullable=True)

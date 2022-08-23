@@ -1,9 +1,11 @@
-import os, requests, json
+import os, requests, json, logging
+import datetime as dt
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from re import I
 
-from model import Event, User
+from model import Datetime, Event, Organize, Repository, User
 
 class EventReader(object):
     def read(self) -> list:
@@ -72,16 +74,21 @@ class EventParser:
     def parse(self, message) -> dict:
         public_status = 1 if message.get('public') else 0
 
-        return {
-            'event_id': message.get('event_id'),
-            'event_type': message.get('type'),
-            'actor_id': message.get('actor', {'id': None}).get('id'),
-            'repo_id': message.get('repo', {'id': None}).get('id'),
-            'org_id': message.get('org', {'id', None}).get('id'),
-            'payload': str(message.get('payload')),
-            'created_at': str(message.get('created_at')),
-            'public': public_status,
-        }
+        try:
+            k = {
+                'event_id': message.get('id'),
+                'event_type': message.get('type'),
+                'actor_id': message.get('actor', {'id': None}).get('id'),
+                'repo_id': message.get('repo', {'id': None}).get('id'),
+                'org_id': message.get('org', {'id': None}).get('id'),
+                'payload': str(message.get('payload')),
+                'created_at': str(message.get('created_at')),
+                'public': public_status,
+            }
+        except:
+            print(message.get('org'))
+
+        return k
 
 class EventFulfillment:
     def __init__(self, engine):
@@ -90,18 +97,20 @@ class EventFulfillment:
             'repo': {},
             'actor': {},
             'org': {},
+            'date': [],
         }
+
+    @property
+    def engine(self):
+        return self._engine
 
     def __actor(self, info):
         uid = info.get('id')
 
-        print(info)
-
-        if uid in self._local_cache['actor']:
+        if uid in self._local_cache['actor'].keys():
             u = self._local_cache['actor'][uid]
-            print('exits')
         else:
-            with Session(self._engine) as s:
+            with Session(self.engine) as s:
                 stm = select(User).where(
                     User.user_id == info.get('id')
                 )
@@ -121,24 +130,99 @@ class EventFulfillment:
                     s.commit()
 
                     u = user.id
-                    print('xxxxx')
                 else:
                     u = m[0].id
-                    print('cache')
 
                 self._local_cache['actor'][uid] = u
 
         return u
-                
 
     def __repo(self, info):
-        pass
+        rid = info.get('id')
+
+        if rid in self._local_cache['repo']:
+            r = self._local_cache['repo'][rid]
+        else:
+            stm = select(Repository).where(Repository.repo_id == rid)
+            with Session(self.engine) as s:
+                rp = s.execute(stm).fetchone()
+                if None == rp:
+                    repo = Repository(
+                        repo_id=info.get('id'),
+                        name=info.get('login'),
+                        url=info.get('url'),
+                    )
+
+                    s.add(repo)
+                    s.commit()
+
+                    r = repo.id
+                else:
+                    r = rp[0].id
+
+                self._local_cache['repo'][rid] = r
+
+        return r
 
     def __org(self, info):
-        pass
+        if None == info:
+            return None
+
+        oid = info.get('id')
+
+        if oid in self._local_cache['org']:
+            r = self._local_cache['org'][oid]
+        else:
+            stm = select(Organize).where(Organize.org_id == oid)
+            with Session(self.engine) as s:
+                og = s.execute(stm).fetchone()
+                if None == og:
+                    org = Organize(
+                        org_id=info.get('id'),
+                        login=info.get('login'),
+                        gravatar_id=info.get('gravatar_id'),
+                        url=info.get('url'),
+                        avatar_url=info.get('avatar_url'),
+                    )
+
+                    s.add(org)
+                    s.commit()
+
+                    r = org.id
+                else:
+                    r = og[0].id
+
+                self._local_cache['org'][oid] = r
+
+        return r
 
     def __date(self, info):
-        pass
+        d = dt.datetime.strptime(info, '%Y-%m-%dT%H:%M:%SZ')
+        ts = int(d.timestamp())
+
+        if ts not in self._local_cache['date']:
+            _datetime = Datetime(
+                id=ts,
+                the_datetime=d,
+                the_datetime_str=str(d),
+                the_date=d.date(),
+                the_day=d.day,
+                the_month=d.month,
+                the_year=d.year,
+                the_time=d.time(),
+                the_hour=d.hour,
+                the_minute=d.minute,
+                the_second=d.second
+            )
+
+            with Session(self.engine) as s:
+                try:
+                    s.add(_datetime)
+                    s.commit()
+                except:
+                    logging.debug(f'Row {ts} already exists')
+
+        return ts
 
     def fill(self, event_data) -> Event:
         event, message = event_data
@@ -150,10 +234,10 @@ class EventFulfillment:
         event['repo_id'] = self.__repo(message.get('repo'))
 
         # org id
-        event['org_id'] = self.__repo(message.get('org'))
+        event['org_id'] = self.__org(message.get('org'))
 
         # date id
-        event['date_id'] = self.__repo(message.get('created_at'))
+        event['date_id'] = self.__date(message.get('created_at'))
 
         return Event(**event)
  
@@ -174,5 +258,3 @@ if __name__ == '__main__':
             parser.parse(e), 
             e
         ))
-
-    print(events)
