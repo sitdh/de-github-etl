@@ -63,7 +63,7 @@ class Repository(Base):
 class Event(Base):
     __tablename__ = 'event'
 
-    id = Column(String, primary_key=True)
+    id = Column(BigInteger, primary_key=True)
     event_id = Column(String, default=default_str)
     event_type = Column(String, default=default_str)
     actor_id = Column(BigInteger, ForeignKey('user.id'), nullable=True)
