@@ -74,16 +74,21 @@ class EventParser:
     def parse(self, message) -> dict:
         public_status = 1 if message.get('public') else 0
 
-        return {
-            'event_id': message.get('event_id'),
-            'event_type': message.get('type'),
-            'actor_id': message.get('actor', {'id': None}).get('id'),
-            'repo_id': message.get('repo', {'id': None}).get('id'),
-            'org_id': message.get('org', {'id', None}).get('id'),
-            'payload': str(message.get('payload')),
-            'created_at': str(message.get('created_at')),
-            'public': public_status,
-        }
+        try:
+            k = {
+                'event_id': message.get('id'),
+                'event_type': message.get('type'),
+                'actor_id': message.get('actor', {'id': None}).get('id'),
+                'repo_id': message.get('repo', {'id': None}).get('id'),
+                'org_id': message.get('org', {'id': None}).get('id'),
+                'payload': str(message.get('payload')),
+                'created_at': str(message.get('created_at')),
+                'public': public_status,
+            }
+        except:
+            print(message.get('org'))
+
+        return k
 
 class EventFulfillment:
     def __init__(self, engine):
@@ -160,6 +165,9 @@ class EventFulfillment:
         return r
 
     def __org(self, info):
+        if None == info:
+            return None
+
         oid = info.get('id')
 
         if oid in self._local_cache['org']:

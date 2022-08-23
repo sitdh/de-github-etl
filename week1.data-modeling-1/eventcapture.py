@@ -17,19 +17,19 @@ def read_event_static(engine):
     fulfillment = EventFulfillment(engine)
 
     events = []
-    for e in adapter.read():
+    for e in tqdm(adapter.read(), desc='Loading data from datasouce'):
         events.append((
             parser.parse(e),
             e
         ))
 
     with Session(engine) as s:
-        for event in events:
-            stm = select(Event).where(event_id=event.get('event_id'))
+        for event, e in tqdm(events, desc='Ingest data into db'):
+            stm = select(Event).where(Event.event_id==event.get('event_id'))
             result = s.execute(stm).fetchone()
             if None == result:
                 s.add(
-                    fulfillment.fill(event)
+                    fulfillment.fill((event, e))
                 )
 
         s.commit()
