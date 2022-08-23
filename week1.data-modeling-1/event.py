@@ -1,9 +1,11 @@
-import os, requests, json
+import os, requests, json, logging
+import datetime as dt
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from re import I
 
-from model import Event, Organize, Repository, User
+from model import Datetime, Event, Organize, Repository, User
 
 class EventReader(object):
     def read(self) -> list:
@@ -90,16 +92,20 @@ class EventFulfillment:
             'repo': {},
             'actor': {},
             'org': {},
+            'date': [],
         }
+
+    @property
+    def engine(self):
+        return self._engine
 
     def __actor(self, info):
         uid = info.get('id')
 
         if uid in self._local_cache['actor'].keys():
             u = self._local_cache['actor'][uid]
-            print('exits')
         else:
-            with Session(self._engine) as s:
+            with Session(self.engine) as s:
                 stm = select(User).where(
                     User.user_id == info.get('id')
                 )
@@ -125,7 +131,6 @@ class EventFulfillment:
                 self._local_cache['actor'][uid] = u
 
         return u
-                
 
     def __repo(self, info):
         rid = info.get('id')
@@ -134,7 +139,7 @@ class EventFulfillment:
             r = self._local_cache['repo'][rid]
         else:
             stm = select(Repository).where(Repository.repo_id == rid)
-            with Session(self._engine) as s:
+            with Session(self.engine) as s:
                 rp = s.execute(stm).fetchone()
                 if None == rp:
                     repo = Repository(
@@ -161,7 +166,7 @@ class EventFulfillment:
             r = self._local_cache['org'][oid]
         else:
             stm = select(Organize).where(Organize.org_id == oid)
-            with Session(self._engine) as s:
+            with Session(self.engine) as s:
                 og = s.execute(stm).fetchone()
                 if None == og:
                     org = Organize(
@@ -184,22 +189,47 @@ class EventFulfillment:
         return r
 
     def __date(self, info):
-        pass
+        d = dt.datetime.strptime(info, '%Y-%m-%dT%H:%M:%SZ')
+        ts = int(d.timestamp())
+
+        if ts not in self._local_cache['date']:
+            _datetime = Datetime(
+                id=ts,
+                the_datetime=d,
+                the_datetime_str=str(d),
+                the_date=d.date(),
+                the_day=d.day,
+                the_month=d.month,
+                the_year=d.year,
+                the_time=d.time(),
+                the_hour=d.hour,
+                the_minute=d.minute,
+                the_second=d.second
+            )
+
+            with Session(self.engine) as s:
+                try:
+                    s.add(_datetime)
+                    s.commit()
+                except:
+                    logging.debug(f'Row {ts} already exists')
+
+        return ts
 
     def fill(self, event_data) -> Event:
         event, message = event_data
 
         # actor id
-        # event['actor_id'] = self.__actor(message.get('actor'))
+        event['actor_id'] = self.__actor(message.get('actor'))
 
         # repo id
-        # event['repo_id'] = self.__repo(message.get('repo'))
+        event['repo_id'] = self.__repo(message.get('repo'))
 
         # org id
         event['org_id'] = self.__org(message.get('org'))
 
         # date id
-        # event['date_id'] = self.__repo(message.get('created_at'))
+        event['date_id'] = self.__date(message.get('created_at'))
 
         return Event(**event)
  
