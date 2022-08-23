@@ -1,5 +1,5 @@
 # SWU: DS525 Project repository
 
-## Week
+## Weeks
 
   - Week 1: [Data Modeling I](./week1.data-modeling-1)
