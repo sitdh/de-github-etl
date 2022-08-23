@@ -34,12 +34,37 @@
     $ pip install -r requirements.txt
     ```
 
-## ETL Script
+## ETL action mode
+
+### setup
+    To define all tables from scratch. 
+    This command will drop all tables, if it already exists.
+
     ```
     $ python eventcapture.py --mode=setup
     ```
 
-    4. Pre-calculate datetime, It migh take times for a while 
+### datetime
+
+    This command will pre-calculated date and time and then store in `datetime` table
+
     ```
     $ python eventcapture.py --mode=datetime
+    ```
+
+### etl
+
+    To read github event from the example file and public event 
+    by reading public event via API by run this command
+
+    ```
+    $ python eventcapture.py --mode=etl
+    ```
+
+### all
+
+    This mode will do all in order start with `setup`, `datetime`, and `etl`
+
+    ```
+    $ python eventcapture.py --mode=all
     ```
