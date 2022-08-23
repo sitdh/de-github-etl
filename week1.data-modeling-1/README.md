@@ -68,3 +68,9 @@
     ```
     $ python eventcapture.py --mode=all
     ```
+
+## Data modeling
+
+    Modeling diagram
+
+![Data Modeling](etl.data-modeling.png)
