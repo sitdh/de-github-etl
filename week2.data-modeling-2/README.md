@@ -33,7 +33,8 @@ to call `python` version `3.x` where `x > 7`)
 
 ## Code execution 
 
-1. To insertion github events by run command listed below  
+1. To insertion github events by run command listed below   
+
     ```
     $ python github-enventscapture.py
     ```
@@ -41,8 +42,12 @@ to call `python` version `3.x` where `x > 7`)
     in virtual environment as we prepared in the previous step 
 
 ## Example data
+1. After execute code above, web ui should display 4 collections in `data` database 
+as listed below
+![Collection](./resources/all-collections.png)
 
-1. To explore data that saved into database by select database name and collection as image below   
+1. To explore data that saved into collection by select collectioon name
+information in that collection will be listed as image that showsn below 
 ![Explore data](./resources/data-ingestion.png)
 
 ## Data Collections
