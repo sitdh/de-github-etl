@@ -69,7 +69,7 @@ class EventAdapter:
     def withDefaultReader(cls):
         adapter = EventAdapter()
         adapter.addAdapters([
-            EventStaticFileReader('./dataset'),
+            EventStaticFileReader('../dataset'),
             EventAPIReader()
         ])
 
