@@ -39,3 +39,8 @@ to call `python` version `3.x` where `x > 7`)
     ```
     **Remark:** `python` in this command represent to `python` 
     in virtual environment as we prepared in the previous step 
+
+## Example data
+
+1. To explore data that saved into database by select database name and collection as image below   
+![Explore data](./resources/data-ingestion.png)
