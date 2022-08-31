@@ -44,3 +44,12 @@ to call `python` version `3.x` where `x > 7`)
 
 1. To explore data that saved into database by select database name and collection as image below   
 ![Explore data](./resources/data-ingestion.png)
+
+## Data Collections
+
+1. Transactions: this collection keep all events sorted by event's timestamp.
+1. Events: this collection categorized event by type 
+and store number of type that happends.
+1. Actor: the collection of actor who performed event separated by event types.
+1. Repository: this collection collect all events that happends 
+with each repositories categorized by types
