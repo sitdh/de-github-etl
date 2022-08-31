@@ -47,7 +47,7 @@ as listed below
 ![Collection](./resources/all-collections.png)
 
 1. To explore data that saved into collection by select collectioon name
-information in that collection will be listed as image that showsn below 
+information in that collection will be listed as image that shown below  
 ![Explore data](./resources/data-ingestion.png)
 
 ## Data Collections
